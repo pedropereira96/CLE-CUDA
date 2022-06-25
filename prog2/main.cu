@@ -100,9 +100,7 @@ int main (int argc, char **argv)
     */
 
     unsigned int gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ;
-    int  sector_size;
 
-    sector_size = order_matrix;
     blockDimX = order_matrix;
     blockDimY = 1 << 0;                                             // optimize!
     blockDimZ = 1 << 0;                                             // do not change!
@@ -115,7 +113,7 @@ int main (int argc, char **argv)
  
  
     start_GPU_time = seconds();
-    determinantOnGPU <<<grid, block>>> (d_mat, d_determinants, sector_size);
+    determinantOnGPU <<<grid, block>>> (d_mat, d_determinants, order_matrix);
     
     CHECK (cudaDeviceSynchronize ());                           
     CHECK (cudaGetLastError ());
@@ -181,6 +179,8 @@ int main (int argc, char **argv)
     /* free memory */
     free (h_mat);
     free (d_mat_aux);
+    free(determinants);
+    free(determinants_from_CPU);
 
     return 0;
 }

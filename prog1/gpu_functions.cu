@@ -32,25 +32,25 @@ __device__ void swapColsOnGPU(double *mat, int x, int y){
  * 
  * @param mat 
  * @param determinant_results 
- * @param sector_size 
+ * @param order_matrix 
  */
-__global__ static void determinantOnGPU (double * __restrict__ mat, double * __restrict__ determinant_results,  int sector_size)
+__global__ static void determinantOnGPU (double * __restrict__ mat, double * __restrict__ determinant_results,  int order_matrix)
 {   
  
     int bx = blockIdx.x + gridDim.x * blockIdx.y + gridDim.x * gridDim.y * blockIdx.z;
     int idx = threadIdx.x + blockDim.x * threadIdx.y + blockDim.x * blockDim.y * threadIdx.z;
 
-    mat += bx * sector_size * sector_size;
+    mat += bx * order_matrix * order_matrix;
 
     
     for (int j = 0; j<=idx; j++) {
 
         /* check if diagonal is 0 to change column*/
-        if (mat[j*sector_size + j] == 0) {
+        if (mat[j*order_matrix + j] == 0) {
             int colSwap = -1;
 
-            for (int i=j+1; i<sector_size; i++) {
-                if (mat[j*sector_size + i] != 0.0) {
+            for (int i=j+1; i<order_matrix; i++) {
+                if (mat[j*order_matrix + i] != 0.0) {
                 colSwap = i;
                 }
             }
@@ -59,26 +59,26 @@ __global__ static void determinantOnGPU (double * __restrict__ mat, double * __r
                 determinant_results[bx] = 0;
                 break;
             } else {
-                swapColsOnGPU(mat, j + idx * sector_size, colSwap + idx * sector_size);
+                swapColsOnGPU(mat, j + idx * order_matrix, colSwap + idx * order_matrix);
             }
 
             __syncthreads(); 
         }
 
         // Apply formula process
-        for (int i = j+1; i<sector_size; i++) {
+        for (int i = j+1; i<order_matrix; i++) {
             
             /*get the division value before apply on formula*/
-            double division =  mat[i*sector_size + j] / mat[j*sector_size + j];
+            double division =  mat[i*order_matrix + j] / mat[j*order_matrix + j];
 
             __syncthreads(); 
 
             // Apply formula
-            formulaGPU(&mat[i*sector_size + idx], division, mat[j*sector_size+idx]);
+            formulaGPU(&mat[i*order_matrix + idx], division, mat[j*order_matrix+idx]);
         }
         
         if (idx == j) {
-            determinant_results[bx] = determinant_results[bx] * mat[ (idx*sector_size) + idx ];
+            determinant_results[bx] = determinant_results[bx] * mat[ (idx*order_matrix) + idx ];
         }
     }
 

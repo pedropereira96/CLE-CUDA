@@ -66,10 +66,10 @@ int main (int argc, char **argv)
 
 
     int mat_size = order_matrix * order_matrix * sizeof(double);
-    size_t mat_area_size = number_of_matrix * mat_size;
+    int mat_area_size = number_of_matrix * mat_size;
     double * h_mat, * h_determinants;
     double * d_mat, * d_determinants;
-
+    printf("Matrix size: %d\n", mat_area_size);
     
     h_mat = (double *) malloc (mat_area_size);
     h_determinants = (double *) malloc (number_of_matrix*sizeof(double));
@@ -100,9 +100,7 @@ int main (int argc, char **argv)
     */
 
     unsigned int gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ;
-    int  sector_size;
 
-    sector_size = order_matrix;
     blockDimX = order_matrix;
     blockDimY = 1 << 0;                                             // optimize!
     blockDimZ = 1 << 0;                                             // do not change!
@@ -115,7 +113,7 @@ int main (int argc, char **argv)
  
  
     start_GPU_time = seconds();
-    determinantOnGPU <<<grid, block>>> (d_mat, d_determinants, sector_size);
+    determinantOnGPU <<<grid, block>>> (d_mat, d_determinants, order_matrix);
     
     CHECK (cudaDeviceSynchronize ());                           
     CHECK (cudaGetLastError ());
@@ -164,13 +162,13 @@ int main (int argc, char **argv)
         printf("Processing matrix %d \n", i + 1);
         printf("GPU Determinant: %.3e \nCPU Determinant: %.3e \n\n", determinants[i], determinants_from_CPU[i]);
     }
- determinants[5]= -500;
+
     int any_wrong = 0;
     /* Compare results */
     for(int i = 0; i < number_of_matrix; i++) {
         if (!compare_double(determinants[i], determinants_from_CPU[i]))
         { 
-            printf ("Different results on matrix %d \n\tGPU calculated %.3e \n\tCPU calculated %.3e\n\tDifferences:%f \n\n", i+1, determinants[i], determinants_from_CPU[i], determinants[i] - determinants_from_CPU[i]);
+            printf ("Different results on matrix %d \n\tGPU calculated %.3e \n\tCPU calculated %.3e\n\\n\n", i+1, determinants[i], determinants_from_CPU[i]);
             any_wrong = 1;
         }
     }
@@ -181,7 +179,10 @@ int main (int argc, char **argv)
     printf("Time elapsed:\n\tGPU: %f sec\n\tCPU: %f sec\n\n", end_GPU_time - start_GPU_time, end_CPU_time - start_CPU_time);
     /* free memory */
     free (h_mat);
+    free(h_determinants);
     free (d_mat_aux);
+    free(determinants);
+    free(determinants_from_CPU);
 
     return 0;
 }
